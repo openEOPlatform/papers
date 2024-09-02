@@ -1,0 +1,224 @@
+{
+  "process_graph": {
+    "load1": {
+      "process_id": "load_collection",
+      "arguments": {
+        "id": "SENTINEL2_L2A",
+        "spatial_extent": {
+          "west": 7, "east": 9,
+          "north": 52, "south": 51
+        },
+        "temporal_extent": ["2022-07-01", "2022-08-01"],
+        "bands": ["B02", "B04", "B08", "SCL"]
+      }
+    },
+    "reduce0": {
+      "process_id": "reduce_dimension",
+      "arguments": {
+        "data": {"from_node": "load1"},
+        "dimension": "bands",
+        "reducer": {
+          "process_graph": {
+            "arrayelement1": {
+              "process_id": "array_element",
+              "arguments": {
+                "data": {"from_parameter": "data"},
+                "label": "SCL"
+              }
+            },
+            "eq1": {
+              "process_id": "eq",
+              "arguments": {
+                "x": {"from_node": "arrayelement1"},
+                "y": 1
+              }
+            },
+            "eq2": {
+              "process_id": "eq",
+              "arguments": {
+                "x": {"from_node": "arrayelement1"},
+                "y": 3
+              }
+            },
+            "or1": {
+              "process_id": "or",
+              "arguments": {
+                "x": {"from_node": "eq1"},
+                "y": {"from_node": "eq2"}
+              }
+            },
+            "eq3": {
+              "process_id": "eq",
+              "arguments": {
+                "x": {"from_node": "arrayelement1"},
+                "y": 8
+              }
+            },
+            "or2": {
+              "process_id": "or",
+              "arguments": {
+                "x": {"from_node": "or1"},
+                "y": {"from_node": "eq3"}
+              }
+            },
+            "eq4": {
+              "process_id": "eq",
+              "arguments": {
+                "x": {"from_node": "arrayelement1"},
+                "y": 9
+              }
+            },
+            "or3": {
+              "process_id": "or",
+              "arguments": {
+                "x": {"from_node": "or2"},
+                "y": {"from_node": "eq4"}
+              },
+              "result": true
+            }
+          }
+        }
+      }
+    },
+    "mask1": {
+      "process_id": "mask",
+      "arguments": {
+        "data": {"from_node": "load1"},
+        "mask": {"from_node": "reduce0"}
+      }
+    },
+    "apply1": {
+      "process_id": "apply",
+      "arguments": {
+        "data": {"from_node": "mask1"},
+        "process": {
+          "process_graph": {
+            "multiply1": {
+              "process_id": "multiply",
+              "arguments": {
+                "x": {"from_parameter": "x"},
+                "y": 0.0001
+              },
+              "result": true
+            }
+          }
+        }
+      }
+    },
+    "reduce1": {
+      "process_id": "reduce_dimension",
+      "arguments": {
+        "data": {"from_node": "apply1"},
+        "dimension": "bands",
+        "reducer": {
+          "process_graph": {
+            "array1": {
+              "process_id": "array_element",
+              "arguments": {
+                "data": {"from_parameter": "data"},
+                "label": "B02"
+              }
+            },
+            "array2": {
+              "process_id": "array_element",
+              "arguments": {
+                "data": {"from_parameter": "data"},
+                "label": "B04"
+              }
+            },
+            "array3": {
+              "process_id": "array_element",
+              "arguments": {
+                "data": {"from_parameter": "data"},
+                "label": "B08"
+              }
+            },
+            "multip1": {
+              "process_id": "multiply",
+              "arguments": {
+                "x": 7.5,
+                "y": {"from_node": "array1"}
+              }
+            },
+            "multip2": {
+              "process_id": "multiply",
+              "arguments": {
+                "x": 6,
+                "y": {"from_node": "array2"}
+              }
+            },
+            "subtra1": {
+              "process_id": "subtract",
+              "arguments": {
+                "x": {"from_node": "array3"},
+                "y": {"from_node": "array2"}
+              }
+            },
+            "add1": {
+              "process_id": "add",
+              "arguments": {
+                "x": {"from_node": "array3"},
+                "y": {"from_node": "multip2"}
+              }
+            },
+            "subtra2": {
+              "process_id": "subtract",
+              "arguments": {
+                "x": {"from_node": "add1"},
+                "y": {"from_node": "multip1"}
+              }
+            },
+            "multip3": {
+              "process_id": "multiply",
+              "arguments": {
+                "x": 2.5,
+                "y": {"from_node": "subtra1"}
+              }
+            },
+            "add2": {
+              "process_id": "add",
+              "arguments": {
+                "x": {"from_node": "subtra2"},
+                "y": 1
+              }
+            },
+            "divide1": {
+              "process_id": "divide",
+              "arguments": {
+                "x": {"from_node": "multip3"},
+                "y": {"from_node": "add2"}
+              },
+              "result": true
+            }
+          }
+        }
+      }
+    },
+    "reduce2": {
+      "process_id": "reduce_dimension",
+      "arguments": {
+        "data": {"from_node": "reduce1"},
+        "dimension": "t",
+        "reducer": {
+          "process_graph": {
+            "max1": {
+              "process_id": "max",
+              "arguments": {
+                "data": {"from_parameter": "data"}
+              },
+              "result": true
+            }
+          }
+        }
+      }
+    },
+    "save3": {
+      "process_id": "save_result",
+      "arguments": {
+        "data": {"from_node": "reduce2"},
+        "format": "GTIFF"
+      },
+      "result": true
+    }
+  }
+}
